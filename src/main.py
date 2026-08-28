@@ -1,6 +1,7 @@
 from pathlib import Path
 from PIL import Image
 from jpeg import aplicar_compressao_jpeg
+from rotacao import aplicar_rotacao
 
 import hashlib
 import imagehash
@@ -17,6 +18,15 @@ PASTA_MODIFICADAS = (
 )
 
 QUALIDADES_JPEG = [90, 65, 40]
+
+PASTA_ROTACAO = (
+    Path(__file__).parent.parent
+    / "dataset"
+    / "img-modificada"
+    / "rotacao"
+)
+
+ANGULOS_ROTACAO = [2, 5, 10]
 
 # Cria a pasta de saída caso ela ainda não exista
 PASTA_MODIFICADAS.mkdir(parents=True, exist_ok=True)
@@ -152,3 +162,71 @@ with open(arquivo_resultados, "w", newline="", encoding="utf-8") as arquivo:
     escritor.writerows(resultados)
 
 print(f"\nResultados salvos em: {arquivo_resultados}")
+
+# Lista que armazenará os resultados da rotação
+resultados_rotacao = []
+
+for imagem_original in imagens:
+
+    sha_original = calcular_sha256(imagem_original)
+    phash_original = calcular_phash(imagem_original)
+
+    print(f"Imagem: {imagem_original.name}")
+
+    for angulo in ANGULOS_ROTACAO:
+
+        pasta_saida = PASTA_ROTACAO / str(angulo)
+        pasta_saida.mkdir(parents=True, exist_ok=True)
+
+        nome_saida = f"{imagem_original.stem}_rotacao_{angulo}.png"
+        imagem_modificada = pasta_saida / nome_saida
+
+        # Gera a imagem rotacionada
+        aplicar_rotacao(
+            imagem_original,
+            imagem_modificada,
+            angulo
+        )
+
+        # Calcula os hashes
+        sha_modificado = calcular_sha256(imagem_modificada)
+        phash_modificado = calcular_phash(imagem_modificada)
+
+        distancia_hamming = phash_original - phash_modificado
+
+        # Armazena o resultado
+        resultados_rotacao.append({
+            "imagem": imagem_original.name,
+            "angulo": angulo,
+            "sha256_igual": sha_original == sha_modificado,
+            "phash_original": str(phash_original),
+            "phash_modificado": str(phash_modificado),
+            "distancia_hamming": distancia_hamming
+        })
+
+        print(f"  Rotação {angulo}°")
+        print(f"    SHA-256 igual: {sha_original == sha_modificado}")
+        print(f"    Distância de Hamming: {distancia_hamming}")
+
+    print()
+arquivo_rotacao = PASTA_RESULTADOS / "rotacao.csv"
+
+with open(arquivo_rotacao, "w", newline="", encoding="utf-8") as arquivo:
+    campos = [
+        "imagem",
+        "angulo",
+        "sha256_igual",
+        "phash_original",
+        "phash_modificado",
+        "distancia_hamming"
+    ]
+
+    escritor = csv.DictWriter(
+        arquivo,
+        fieldnames=campos
+    )
+
+    escritor.writeheader()
+    escritor.writerows(resultados_rotacao)
+
+print(f"Resultados de rotação salvos em: {arquivo_rotacao}")
