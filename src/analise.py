@@ -2,11 +2,56 @@ import csv
 import statistics
 from pathlib import Path
 
-# Define o diretório raiz do projeto
+
+# Define o diretório raiz do projeto.
 PASTA_BASE = Path(__file__).parent.parent
 
-# Diretório onde estão armazenados os resultados dos experimentos
+# Diretório onde estão armazenados os resultados dos experimentos.
 PASTA_RESULTADOS = PASTA_BASE / "resultados"
+
+
+def calcular_estatisticas(valores):
+    """
+    Calcula as estatísticas descritivas das distâncias de Hamming
+    """
+
+    return {
+        "comparacoes": len(valores),
+        "media": statistics.mean(valores),
+        "mediana": statistics.median(valores),
+        "minimo": min(valores),
+        "maximo": max(valores),
+        "desvio_padrao": statistics.stdev(valores),
+        "quantidade_zero": valores.count(0)
+    }
+
+
+def exibir_estatisticas(valores):
+    """
+    Exibe as estatísticas descritivas das distâncias de Hamming.
+    """
+
+    estatisticas = calcular_estatisticas(valores)
+
+    percentual_zero = (
+        estatisticas["quantidade_zero"]
+        / estatisticas["comparacoes"]
+    ) * 100
+
+    print(f"  Comparações: {estatisticas['comparacoes']}")
+    print(f"  Média: {estatisticas['media']:.2f}")
+    print(f"  Mediana: {estatisticas['mediana']:.2f}")
+    print(f"  Mínimo: {estatisticas['minimo']}")
+    print(f"  Máximo: {estatisticas['maximo']}")
+    print(
+        f"  Desvio-padrão: "
+        f"{estatisticas['desvio_padrao']:.2f}"
+    )
+    print(
+        f"  Distância 0: "
+        f"{estatisticas['quantidade_zero']} "
+        f"({percentual_zero:.2f}%)"
+    )
 
 
 def analisar_resultados(
@@ -15,18 +60,13 @@ def analisar_resultados(
     nome_experimento
 ):
     """
-    Analisa as distâncias de Hamming de um experimento
-
-    Os resultados são agrupados pelo parâmetro da transformação
-    e são calculadas estatísticas descritivas para cada grupo
+    Analisa os resultados de um experimento de robustez,
+    agrupando as distâncias pelo parâmetro da transformação
     """
 
     arquivo_resultados = PASTA_RESULTADOS / nome_arquivo
-
-    # Armazena as distâncias de Hamming agrupadas pelo parâmetro
     distancias = {}
 
-    # Lê os resultados do experimento
     with open(
         arquivo_resultados,
         "r",
@@ -40,7 +80,6 @@ def analisar_resultados(
             parametro = int(linha[coluna_parametro])
             distancia = int(linha["distancia_hamming"])
 
-            # Cria uma lista para o parâmetro caso ainda não exista
             if parametro not in distancias:
                 distancias[parametro] = []
 
@@ -48,62 +87,68 @@ def analisar_resultados(
 
     print(f"\nAnálise do experimento: {nome_experimento}\n")
 
-    # Calcula as estatísticas de cada parâmetro
     for parametro in sorted(distancias):
 
-        valores = distancias[parametro]
-
-        media = statistics.mean(valores)
-        mediana = statistics.median(valores)
-        minimo = min(valores)
-        maximo = max(valores)
-        desvio_padrao = statistics.stdev(valores) #desvio-padrão amostral
-
-        # Calcula quantas comparações tiveram pHash idêntico
-        quantidade_zero = valores.count(0)
-        percentual_zero = (
-            quantidade_zero / len(valores)
-        ) * 100
-
         print(f"Parâmetro: {parametro}")
-        print(f"  Comparações: {len(valores)}")
-        print(f"  Média: {media:.2f}")
-        print(f"  Mediana: {mediana:.2f}")
-        print(f"  Mínimo: {minimo}")
-        print(f"  Máximo: {maximo}")
-        print(f"  Desvio-padrão: {desvio_padrao:.2f}")
-        print(
-            f"  Distância 0: {quantidade_zero} "
-            f"({percentual_zero:.2f}%)"
-        )
+
+        exibir_estatisticas(distancias[parametro])
+
         print()
 
-def main():
+
+def analisar_discriminacao():
     """
-    Executa a análise dos resultados de todos os experimentos
-    realizados no dataset piloto.
+    Analisa as distâncias de Hamming entre imagens
+    originais diferentes.
     """
 
-    # Analisa os resultados da compressão JPEG
+    arquivo_resultados = (
+        PASTA_RESULTADOS / "discriminacao.csv"
+    )
+
+    distancias = []
+
+    with open(
+        arquivo_resultados,
+        "r",
+        newline="",
+        encoding="utf-8"
+    ) as arquivo:
+
+        leitor = csv.DictReader(arquivo)
+
+        for linha in leitor:
+            distancia = int(linha["distancia_hamming"])
+            distancias.append(distancia)
+
+    print("\nAnálise do experimento: Discriminação\n")
+
+    exibir_estatisticas(distancias)
+
+    print()
+
+
+def main():
     analisar_resultados(
         "jpeg.csv",
         "qualidade",
         "Compressão JPEG"
     )
 
-    # Analisa os resultados da rotação
     analisar_resultados(
         "rotacao.csv",
         "angulo",
         "Rotação"
     )
 
-    # Analisa os resultados do recorte
     analisar_resultados(
         "crop.csv",
         "percentual",
         "Crop"
     )
+
+    analisar_discriminacao()
+
 
 if __name__ == "__main__":
     main()
