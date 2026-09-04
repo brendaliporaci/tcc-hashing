@@ -127,6 +127,26 @@ def analisar_discriminacao():
 
     print()
 
+def analisar_espelhamento():
+    arquivo_resultados = PASTA_RESULTADOS / "espelhamento.csv"
+    distancias = []
+
+    with open(
+        arquivo_resultados,
+        "r",
+        newline="",
+        encoding="utf-8"
+    ) as arquivo:
+        leitor = csv.DictReader(arquivo)
+
+        for linha in leitor:
+            distancias.append(
+                int(linha["distancia_hamming"])
+            )
+
+    print("\nAnálise do experimento: Espelhamento\n")
+    exibir_estatisticas(distancias)
+    print()
 
 def main():
     analisar_resultados(
@@ -146,9 +166,14 @@ def main():
         "percentual",
         "Crop"
     )
+    
+    analisar_resultados(
+        "redimensionamento.csv",
+        "percentual",
+        "Redimensionamento"
+    )
 
+    analisar_espelhamento()
     analisar_discriminacao()
-
-
 if __name__ == "__main__":
     main()

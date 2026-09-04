@@ -84,6 +84,37 @@ def calcular_reconhecimento(distancias, threshold):
 
     return reconhecidas, percentual
 
+def calcular_classificacao(
+    distancias_positivas,
+    distancias_negativas,
+    threshold
+):
+    """
+    Calcula TP, FN, FP e TN para um determinado threshold.
+    """
+
+    tp = sum(
+        distancia <= threshold
+        for distancia in distancias_positivas
+    )
+
+    fn = sum(
+        distancia > threshold
+        for distancia in distancias_positivas
+    )
+
+    fp = sum(
+        distancia <= threshold
+        for distancia in distancias_negativas
+    )
+
+    tn = sum(
+        distancia > threshold
+        for distancia in distancias_negativas
+    )
+
+    return tp, fn, fp, tn
+
 def exibir_transformacao(
     nome,
     grupos,
@@ -112,6 +143,24 @@ def exibir_transformacao(
             f"({percentual:.2f}%)"
         )
 
+def carregar_distancias_espelhamento():
+    caminho_arquivo = PASTA_RESULTADOS / "espelhamento.csv"
+    distancias = []
+
+    with open(
+        caminho_arquivo,
+        "r",
+        newline="",
+        encoding="utf-8"
+    ) as arquivo:
+        leitor = csv.DictReader(arquivo)
+
+        for linha in leitor:
+            distancias.append(
+                int(linha["distancia_hamming"])
+            )
+
+    return distancias
 
 def main():
 
@@ -132,8 +181,26 @@ def main():
         "percentual"
     )
 
-    # Carrega as comparações entre imagens diferentes
+    redimensionamento = carregar_distancias_por_parametro(
+        "redimensionamento.csv",
+        "percentual"
+    )
+
+    # Carrega a distância de discriminação
     discriminacao = carregar_distancias_discriminacao()
+    
+    # Carrega a distância de espelhamento
+    espelhamento = carregar_distancias_espelhamento()
+
+    # Junta todas as distâncias das versões modificadas.
+    # Elas representam os casos positivos do experimento.
+    distancias_positivas = []
+
+    for grupos in [jpeg, rotacao, crop, redimensionamento]:
+        for distancias in grupos.values():
+            distancias_positivas.extend(distancias)
+
+    distancias_positivas.extend(espelhamento)
 
     print("\nAnálise de thresholds\n")
 
@@ -160,6 +227,24 @@ def main():
             threshold,
             "%"
         )
+        
+        exibir_transformacao(
+            "Redimensionamento",
+            redimensionamento,
+            threshold,
+            "%"
+        )
+        
+        reconhecidas, percentual = calcular_reconhecimento(
+            espelhamento,
+            threshold
+        )
+
+        print("  Espelhamento")
+        print(
+            f"    {reconhecidas}/{len(espelhamento)} "
+            f"({percentual:.2f}%)"
+        )
 
         # Em imagens diferentes, uma distância menor ou igual
         # ao threshold representa um falso positivo
@@ -178,6 +263,19 @@ def main():
             f"{falsos_positivos}/{len(discriminacao)} "
             f"({percentual_falsos:.2f}%)"
         )
+
+        # Calcula TP, FN, FP e TN para o threshold atual.
+        tp, fn, fp, tn = calcular_classificacao(
+            distancias_positivas,
+            discriminacao,
+            threshold
+        )
+
+        print("  Classificação")
+        print(f"    TP: {tp}")
+        print(f"    FN: {fn}")
+        print(f"    FP: {fp}")
+        print(f"    TN: {tn}")
 
         print()
 
