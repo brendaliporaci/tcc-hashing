@@ -17,10 +17,12 @@ PASTA_BASE = Path(__file__).parent.parent
 PASTA_ORIGINAIS = PASTA_BASE / "dataset" / "img-original"
 
 # Imagens modificadas
-PASTA_MODIFICADAS = PASTA_BASE / "dataset" / "img-modificada"
+PASTA_MODIFICADAS = (
+    PASTA_BASE / "dataset" / "img-modificada" / "fairface"
+)
 
 # Resultados armazenados em tabelas csv
-PASTA_RESULTADOS = PASTA_BASE / "resultados"
+PASTA_RESULTADOS = PASTA_BASE / "resultados" / "fairface"
 
 
 # Parâmetros utilizados no experimento de compressão JPEG
@@ -38,15 +40,23 @@ PERCENTUAIS_REDIMENSIONAMENTO = [80, 120]
 
 def main():
     """
-    Executa os experimentos de robustez utilizando as imagens
-    do dataset piloto.
+    Executa os experimentos de robustez utilizando as
+    1.000 imagens selecionadas do dataset FairFace.
     """
 
     # Inicia a medição do tempo total de execução
     inicio = time.perf_counter()
 
     # Localiza e ordena as imagens originais
-    imagens = sorted(PASTA_ORIGINAIS.glob("*.png"))
+    imagens = sorted(PASTA_ORIGINAIS.glob("*.jpg"))
+
+    if len(imagens) != 1000:
+        raise ValueError(
+            f"Esperadas 1000 imagens FairFace, "
+            f"mas encontradas {len(imagens)}."
+        )
+
+    PASTA_RESULTADOS.mkdir(parents=True, exist_ok=True)
 
     print(f"Imagens encontradas: {len(imagens)}\n")
 

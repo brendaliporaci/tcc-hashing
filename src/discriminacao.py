@@ -1,3 +1,4 @@
+
 import csv
 from pathlib import Path
 from itertools import combinations
@@ -9,18 +10,22 @@ PASTA_BASE = Path(__file__).parent.parent
 
 # Diretórios utilizados no experimento
 PASTA_ORIGINAIS = PASTA_BASE / "dataset" / "img-original"
-PASTA_RESULTADOS = PASTA_BASE / "resultados"
+PASTA_RESULTADOS = PASTA_BASE / "resultados" / "fairface"
 
 
 def executar_experimento_discriminacao():
     """
     Compara o pHash de todas as combinações de imagens originais
-    para avaliar a capacidade de discriminação do algoritmo.
+    do FairFace para avaliar a capacidade de discriminação.
     """
 
-    imagens = sorted(PASTA_ORIGINAIS.glob("*.png"))
+    imagens = sorted(PASTA_ORIGINAIS.glob("*.jpg"))
 
-    # Garante que a pasta de resultados exista
+    if len(imagens) != 1000:
+        raise ValueError(
+            f"Esperadas 1000 imagens, mas encontradas {len(imagens)}."
+        )
+
     PASTA_RESULTADOS.mkdir(parents=True, exist_ok=True)
 
     arquivo_resultados = PASTA_RESULTADOS / "discriminacao.csv"
@@ -31,25 +36,9 @@ def executar_experimento_discriminacao():
     for imagem in imagens:
         hashes[imagem] = calcular_phash(imagem)
 
-    resultados = []
+    total_comparacoes = 0
 
-    # Gera todos os pares únicos de imagens
-    for imagem_a, imagem_b in combinations(imagens, 2):
-        phash_a = hashes[imagem_a]
-        phash_b = hashes[imagem_b]
-
-        # O operador "-" do ImageHash calcula a distância de Hamming
-        distancia_hamming = phash_a - phash_b
-
-        resultados.append([
-            imagem_a.name,
-            imagem_b.name,
-            str(phash_a),
-            str(phash_b),
-            distancia_hamming
-        ])
-
-    # Salva as comparações em CSV
+    # Escreve os resultados diretamente no CSV
     with open(
         arquivo_resultados,
         "w",
@@ -67,11 +56,27 @@ def executar_experimento_discriminacao():
             "distancia_hamming"
         ])
 
-        escritor.writerows(resultados)
+        # Gera todos os pares únicos de imagens
+        for imagem_a, imagem_b in combinations(imagens, 2):
+            phash_a = hashes[imagem_a]
+            phash_b = hashes[imagem_b]
+
+            # Calcula a distância de Hamming
+            distancia_hamming = phash_a - phash_b
+
+            escritor.writerow([
+                imagem_a.name,
+                imagem_b.name,
+                str(phash_a),
+                str(phash_b),
+                distancia_hamming
+            ])
+
+            total_comparacoes += 1
 
     print("Experimento de discriminação concluído.")
     print(f"Imagens: {len(imagens)}")
-    print(f"Comparações: {len(resultados)}")
+    print(f"Comparações: {total_comparacoes}")
     print(f"Resultados salvos em: {arquivo_resultados}")
 
 

@@ -47,7 +47,8 @@ def executar_experimento_redimensionamento(
         for caminho_original in imagens:
 
             caminho_modificado = (
-                pasta_percentual / caminho_original.name
+                pasta_percentual
+                / f"{caminho_original.stem}_redimensionamento_{percentual}.png"
             )
 
             # Aplica o redimensionamento.

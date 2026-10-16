@@ -30,7 +30,7 @@ def executar_experimento_espelhamento(
     for caminho_original in imagens:
 
         caminho_modificado = (
-            pasta_modificadas / caminho_original.name
+            pasta_modificadas / f"{caminho_original.stem}_espelhamento.png"
         )
 
         aplicar_espelhamento(

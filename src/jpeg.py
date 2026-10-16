@@ -10,7 +10,9 @@ def aplicar_compressao_jpeg(caminho_original, caminho_saida, qualidade):
     o nível de qualidade utilizado na compressão.
     """
     with Image.open(caminho_original) as imagem:
-        imagem.save(
+        imagem_rgb = imagem.convert("RGB")
+
+        imagem_rgb.save(
             caminho_saida,
             format="JPEG",
             quality=qualidade

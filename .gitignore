@@ -1,2 +1,16 @@
+# Ambiente virtual e arquivos temporários
 .venv/
 __pycache__/
+*.pyc
+
+# Dataset FairFace completo
+/dataset/fairface/
+
+# Imagens FairFace selecionadas
+/dataset/img-original/*.jpg
+
+# Imagens modificadas do experimento definitivo
+/dataset/img-modificada/fairface/
+
+# Resultados experimentais
+/resultados/fairface/
