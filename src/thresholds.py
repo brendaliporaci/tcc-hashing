@@ -115,6 +115,35 @@ def calcular_classificacao(
 
     return tp, fn, fp, tn
 
+# Cálculo de recall
+def calcular_recall(tp, fn):
+    """
+    Calcula a proporção de casos positivos que foram
+    corretamente reconhecidos.
+    """
+    total = tp + fn
+    return tp / total if total > 0 else 0.0
+
+
+# Cálculo de precisão
+def calcular_precisao(tp, fp):
+    """
+    Calcula a proporção de correspondências identificadas
+    que realmente pertencem aos casos positivos.
+    """
+    total = tp + fp
+    return tp / total if total > 0 else 0.0
+
+
+# Cálculo da taxa de falsos positivos
+def calcular_fpr(fp, tn):
+    """
+    Calcula a proporção de casos negativos que foram
+    incorretamente classificados como correspondências.
+    """
+    total = fp + tn
+    return fp / total if total > 0 else 0.0
+
 def exibir_transformacao(
     nome,
     grupos,
@@ -195,6 +224,8 @@ def main():
     # Junta todas as distâncias das versões modificadas.
     # Elas representam os casos positivos do experimento.
     distancias_positivas = []
+    
+    resultados_thresholds = []
 
     for grupos in [jpeg, rotacao, crop, redimensionamento]:
         for distancias in grupos.values():
@@ -270,14 +301,60 @@ def main():
             discriminacao,
             threshold
         )
+        
+        # Calcula as métricas de avaliação para o threshold atual
+        recall = calcular_recall(tp, fn)
+        precisao = calcular_precisao(tp, fp)
+        fpr = calcular_fpr(fp, tn)
+        
+        # Armazena as métricas calculadas para o threshold atual
+        resultados_thresholds.append([
+            threshold,
+            tp,
+            fn,
+            fp,
+            tn,
+            recall * 100,
+            precisao * 100,
+            fpr * 100
+        ])
 
         print("  Classificação")
         print(f"    TP: {tp}")
         print(f"    FN: {fn}")
         print(f"    FP: {fp}")
         print(f"    TN: {tn}")
-
+        print(f"    Recall: {recall * 100:.2f}%")
+        print(f"    Precisão: {precisao * 100:.2f}%")
+        print(f"    FPR: {fpr * 100:.2f}%")
         print()
+        
+    # Salva o resumo da análise dos thresholds em CSV
+    arquivo_saida = PASTA_RESULTADOS / "thresholds.csv"
+
+    with open(
+        arquivo_saida,
+        "w",
+        newline="",
+        encoding="utf-8"
+    ) as arquivo:
+        escritor = csv.writer(arquivo)
+
+        escritor.writerow([
+            "threshold",
+            "tp",
+            "fn",
+            "fp",
+            "tn",
+            "recall",
+            "precisao",
+            "fpr"
+        ])
+
+        escritor.writerows(resultados_thresholds)
+
+    print(f"Resultados dos thresholds salvos em: {arquivo_saida}")
+
 
 if __name__ == "__main__":
     main()
