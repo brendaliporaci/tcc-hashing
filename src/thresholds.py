@@ -3,7 +3,7 @@ from pathlib import Path
 
 # Define o diretório raiz do projeto
 PASTA_BASE = Path(__file__).parent.parent
-PASTA_RESULTADOS = PASTA_BASE / "resultados"
+PASTA_RESULTADOS = PASTA_BASE / "resultados" / "fairface"
 
 # Limiares de distância de Hamming avaliados
 THRESHOLDS = [5, 10, 15, 20, 25, 30]
